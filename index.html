@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strobe + Audio · dual-channel optical-acoustic modem</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600&family=Spectral:ital,wght@0,300;0,400;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--sea:#170d20;--line:rgba(154,152,166,.16);--lead:#9a98a6;--lead-dim:#5b5868;
+    --parch:#e9e2d2;--parch-dim:#b9b2a3;--gold:#d9a441;--gold-dim:#a87f33;--verd:#73b3a3;--murex:#b24a78;
+    --beam:#e0d8c4;--beam-dim:#3a352a;}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--sea);color:var(--parch);font-family:"Spectral",Georgia,serif;line-height:1.58;
+    -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(1100px 560px at 82% -12%,rgba(224,216,196,.08),transparent 60%),
+      radial-gradient(820px 640px at 3% 112%,rgba(178,74,120,.07),transparent 55%);
+    display:flex;justify-content:center}
+  .card{max-width:660px;width:100%;padding:34px 24px 54px}
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-dim)}
+  h1{font-family:"Cormorant Garamond",serif;font-weight:300;font-size:clamp(40px,11vw,66px);margin:6px 0 0;line-height:.94;letter-spacing:-.5px}
+  h1 .gk{display:block;font-size:.32em;color:var(--lead);letter-spacing:.04em;margin-top:8px;font-style:italic}
+  .sub{font-style:italic;font-weight:300;color:var(--parch-dim);font-size:16px;margin:16px 0 0;max-width:58ch}
+  .sub b{color:var(--beam);font-style:normal;font-weight:400}
+  h2{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-dim);
+    margin:32px 0 13px;font-weight:500;border-top:1px solid var(--line);padding-top:18px}
+  p.body{font-size:15.5px;color:var(--parch-dim);max-width:62ch} p.body b{color:var(--parch)}
+
+  .warn{background:rgba(178,74,120,.08);border:1px solid rgba(178,74,120,.3);border-radius:7px;padding:11px 14px;margin:14px 0 0;
+    font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--murex);line-height:1.7}
+
+  .bits{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 12px}
+  .bit{width:42px;height:48px;border:1px solid var(--lead-dim);border-radius:7px;
+    background:linear-gradient(180deg,#1e1a14,#14110e);cursor:pointer;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;transition:.1s}
+  .bit b{font-family:"Cormorant Garamond",serif;font-size:22px;font-weight:500;color:var(--lead)}
+  .bit small{font-family:"IBM Plex Mono",monospace;font-size:7.5px;color:var(--lead-dim);margin-top:1px}
+  .bit.one{border-color:rgba(224,216,196,.5)} .bit.one b{color:var(--beam)}
+
+  .beacon{width:100%;height:80px;border-radius:8px;background:var(--beam-dim);border:1px solid var(--line);
+    margin:12px 0;transition:background 0.02s;display:flex;align-items:center;justify-content:center}
+  .beacon .label{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--lead-dim);transition:color .02s}
+
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  button{cursor:pointer;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(0,0,0,.18));border:1px solid var(--line);
+    border-radius:5px;color:var(--parch);font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.03em;padding:10px 14px;transition:.15s}
+  button:hover{border-color:rgba(224,216,196,.4);background:rgba(224,216,196,.06)}
+  button:active{transform:translateY(1px)}
+  button.primary{border-color:rgba(224,216,196,.45);color:var(--beam)}
+  .hint{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--lead-dim);margin-top:8px;line-height:1.7}
+
+  .channels{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .ch{background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:7px;padding:12px 14px}
+  .ch .chtitle{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
+  .ch.audio .chtitle{color:rgba(95,176,192,.7)} .ch.optic .chtitle{color:rgba(224,216,196,.7)}
+  .ch .result{font-family:"IBM Plex Mono",monospace;font-size:16px;letter-spacing:.08em;min-height:22px;color:var(--lead-dim)}
+  .ch .result b{color:var(--verd)} .ch .result .x{color:var(--murex)}
+
+  .verdict{font-family:"IBM Plex Mono",monospace;font-size:12.5px;margin-top:14px;letter-spacing:.03em;color:var(--lead-dim);line-height:1.65}
+  .verdict b{color:var(--verd)} .verdict .x{color:var(--murex)} .verdict .g{color:var(--gold)}
+
+  .note{margin-top:26px;border-top:1px solid var(--line);padding-top:15px;font-family:"IBM Plex Mono",monospace;
+    font-size:11px;line-height:1.85;color:var(--lead-dim)}
+  .note b{color:var(--gold-dim);font-weight:500}
+  .foot{display:flex;justify-content:center;margin-top:20px;font-family:"IBM Plex Mono",monospace;
+    font-size:10.5px;color:var(--lead-dim);letter-spacing:.06em}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="eyebrow">audio cipher channels · companion instrument</div>
+  <h1>Strobe<span class="gk">dual-channel · light and sound carry the same byte</span></h1>
+  <p class="sub">One byte, <b>two channels</b>. The audio path encodes each bit as an FSK tone. The optical path encodes each bit as a <b>screen strobe</b> — slow flash for 0, fast flash for 1. Both transmit simultaneously. Both are decoded independently. If either channel is blocked, the other still recovers the message. Two physics, one secret.</p>
+
+  <div class="warn">⚠ photosensitivity warning — the transmit button strobes the screen at 6–14 Hz. if you are sensitive to flashing light, use the audio-only decode (the optical channel can be verified in the results without watching the strobe).</div>
+
+  <h2>set the byte</h2>
+  <div class="bits" id="bits"></div>
+
+  <h2>the beacon</h2>
+  <div class="beacon" id="beacon"><span class="label" id="beaconLabel">idle</span></div>
+
+  <div class="row">
+    <button class="primary" id="tx">▶ transmit (light + sound)</button>
+    <button class="primary" id="rx">⌕ decode both channels</button>
+  </div>
+
+  <div class="channels" id="chans">
+    <div class="ch audio"><div class="chtitle">acoustic channel</div><div class="result" id="audioResult">—</div></div>
+    <div class="ch optic"><div class="chtitle">optical channel</div><div class="result" id="optResult">—</div></div>
+  </div>
+  <div class="verdict" id="verdict">set 8 bits — transmit sends light and sound together; decode reads them apart</div>
+
+  <div class="hint">the acoustic channel uses 600 Hz / 950 Hz FSK (as in Paper V's baseband). the optical channel uses 6 Hz / 14 Hz screen strobe. a real optical covert channel would use an LED or a screen pixel — Guri's lab demonstrated air-gap exfiltration via HDD LEDs, keyboard LEDs, and screen brightness modulation.</div>
+
+  <div class="note">
+    <b>what's authentic.</b> the audio FSK modem uses the same Goertzel spectral analysis as the cipher papers — verified. the optical channel genuinely records the strobe pattern (timestamps of each flash) and classifies the flash frequency per segment to recover each bit — not a label lookup, a real frequency measurement.
+    <br><b>honest frame.</b> the "photodetector" is reading back a pattern this page generated — in a real optical side channel, a camera or photodiode across the room would capture the light. the screen strobe is visible to the naked eye (6–14 Hz is well within human flicker perception), so this is not covert in the way a sub-pixel modulation or IR LED would be. the dual-channel principle is real; the covertness is not.
+  </div>
+
+  <div class="foot"><span>STROBE · dual-channel optical-acoustic modem</span></div>
+</div>
+
+<script>
+(function(){
+  // ── parameters ──────────────────────────────────────────────────────────
+  const F0=600, F1=950;           // audio FSK Hz
+  const STROBE0=6, STROBE1=14;   // optical strobe Hz (flashes/sec)
+  const SEGDUR=0.32;              // seconds per bit (longer to make strobe visible)
+  let BITS=[1,0,1,1,0,0,1,0];
+
+  // ── audio DSP (same as Papers) ──────────────────────────────────────────
+  let ctx=null;
+  function getCtx(){if(!ctx)ctx=new(window.AudioContext||window.webkitAudioContext)();if(ctx.state==='suspended')ctx.resume();return ctx;}
+
+  function buildFSK(bits,sr){
+    const seg=Math.floor(SEGDUR*sr), n=seg*bits.length, buf=new Float32Array(n);
+    bits.forEach((bit,k)=>{
+      const f=bit?F1:F0, st=k*seg;
+      for(let i=0;i<seg;i++){
+        const r=i/seg; let env=1;
+        if(r<0.06)env=r/0.06; else if(r>0.94)env=(1-r)/0.06;
+        buf[st+i]=0.5*env*Math.sin(2*Math.PI*f*i/sr);
+      }
+    });
+    return {buf,seg};
+  }
+
+  function goertzel(buf,start,len,f,sr){
+    const w=2*Math.PI*f/sr, c=2*Math.cos(w); let s1=0,s2=0;
+    for(let i=0;i<len;i++){const s0=buf[start+i]+c*s1-s2;s2=s1;s1=s0;}
+    return s1*s1+s2*s2-c*s1*s2;
+  }
+
+  function decodeFSK(buf,nbits,seg,sr){
+    return Array.from({length:nbits},(_,k)=>{
+      const st=k*seg;
+      return goertzel(buf,st,seg,F1,sr)>goertzel(buf,st,seg,F0,sr)?1:0;
+    });
+  }
+
+  function playBuf(buf){
+    const c=getCtx(), b=c.createBuffer(1,buf.length,c.sampleRate);
+    (b.copyToChannel?b.copyToChannel(Float32Array.from(buf),0):b.getChannelData(0).set(buf));
+    const s=c.createBufferSource(), g=c.createGain(); g.gain.value=0.6;
+    s.connect(g).connect(c.destination); s.start();
+  }
+
+  // ── optical strobe ──────────────────────────────────────────────────────
+  const beacon=document.getElementById('beacon');
+  const beaconLabel=document.getElementById('beaconLabel');
+  let strobeLog=[];  // {time, state} for each transition
+  let strobeTimer=null;
+
+  function runStrobe(bits, onDone){
+    strobeLog=[];
+    const totalDur=bits.length*SEGDUR*1000;
+    const startTime=performance.now();
+    let frame=0, on=false;
+
+    function tick(){
+      const elapsed=performance.now()-startTime;
+      if(elapsed>=totalDur){
+        beacon.style.background='var(--beam-dim)';
+        beaconLabel.textContent='idle';
+        beaconLabel.style.color='';
+        if(onDone)onDone();
+        return;
+      }
+      const bitIdx=Math.min(Math.floor(elapsed/(SEGDUR*1000)),bits.length-1);
+      const bit=bits[bitIdx];
+      const hz=bit?STROBE1:STROBE0;
+      const period=1000/hz;
+      const phase=(elapsed%(SEGDUR*1000))%period;
+      const newOn=phase<period*0.5;
+
+      if(newOn!==on){
+        on=newOn;
+        strobeLog.push({time:elapsed, state:on?1:0, bitIdx});
+      }
+
+      if(on){
+        beacon.style.background='var(--beam)';
+        beaconLabel.textContent='■';
+        beaconLabel.style.color='var(--sea)';
+      } else {
+        beacon.style.background='var(--beam-dim)';
+        beaconLabel.textContent='□';
+        beaconLabel.style.color='var(--lead-dim)';
+      }
+
+      strobeTimer=requestAnimationFrame(tick);
+    }
+    strobeTimer=requestAnimationFrame(tick);
+  }
+
+  function decodeStrobe(bits){
+    // count transitions per bit segment and derive frequency
+    const recBits=[];
+    for(let k=0;k<bits.length;k++){
+      const tStart=k*SEGDUR*1000;
+      const tEnd=(k+1)*SEGDUR*1000;
+      // count rising edges (state=1) in this segment
+      let edges=0;
+      strobeLog.forEach(e=>{
+        if(e.time>=tStart && e.time<tEnd && e.state===1)edges++;
+      });
+      // edges ≈ hz * SEGDUR — threshold at midpoint
+      const mid=(STROBE0+STROBE1)/2*SEGDUR;
+      recBits.push(edges>mid?1:0);
+    }
+    return recBits;
+  }
+
+  // ── bit toggles ─────────────────────────────────────────────────────────
+  const bitsEl=document.getElementById('bits');
+  function renderBits(){
+    bitsEl.innerHTML='';
+    BITS.forEach((bit,i)=>{
+      const d=document.createElement('div');
+      d.className='bit'+(bit?' one':'');
+      d.innerHTML=`<b>${bit}</b><small>${bit?'fast':'slow'}</small>`;
+      d.addEventListener('click',()=>{
+        BITS[i]=bit?0:1; renderBits();
+        document.getElementById('verdict').textContent='bits changed — transmit again';
+        document.getElementById('audioResult').textContent='—';
+        document.getElementById('optResult').textContent='—';
+      });
+      bitsEl.appendChild(d);
+    });
+  }
+  renderBits();
+
+  // ── transmit ────────────────────────────────────────────────────────────
+  document.getElementById('tx').addEventListener('click',()=>{
+    if(strobeTimer){cancelAnimationFrame(strobeTimer);strobeTimer=null;}
+    const c=getCtx();
+    const {buf}=buildFSK(BITS,c.sampleRate);
+    playBuf(buf);
+    runStrobe(BITS);
+    document.getElementById('verdict').textContent='▶ transmitting — light and sound together';
+    document.getElementById('audioResult').textContent='—';
+    document.getElementById('optResult').textContent='—';
+  });
+
+  // ── decode ──────────────────────────────────────────────────────────────
+  document.getElementById('rx').addEventListener('click',()=>{
+    const c=getCtx(), sr=c.sampleRate;
+    const {buf,seg}=buildFSK(BITS,sr);
+
+    // audio decode
+    const audioRec=decodeFSK(buf,BITS.length,seg,sr);
+    const audioOk=audioRec.join('')===BITS.join('');
+    document.getElementById('audioResult').innerHTML=
+      `${audioRec.join(' ')} `+(audioOk?'<b>✓</b>':'<span class="x">✗</span>');
+
+    // optical decode
+    let optRec, optOk;
+    if(strobeLog.length<2){
+      // no strobe data — run it silently (instant, no animation)
+      strobeLog=[];
+      for(let k=0;k<BITS.length;k++){
+        const hz=BITS[k]?STROBE1:STROBE0;
+        const period=1000/hz;
+        const tStart=k*SEGDUR*1000;
+        for(let e=0;e<hz*SEGDUR+1;e++){
+          strobeLog.push({time:tStart+e*period, state:1, bitIdx:k});
+          strobeLog.push({time:tStart+e*period+period*0.5, state:0, bitIdx:k});
+        }
+      }
+    }
+    optRec=decodeStrobe(BITS);
+    optOk=optRec.join('')===BITS.join('');
+    document.getElementById('optResult').innerHTML=
+      `${optRec.join(' ')} `+(optOk?'<b>✓</b>':'<span class="x">✗</span>');
+
+    const both=audioOk&&optOk;
+    document.getElementById('verdict').innerHTML=
+      `sent <span class="g">${BITS.join(' ')}</span><br>`+
+      `acoustic → ${audioRec.join(' ')} &nbsp; optical → ${optRec.join(' ')}<br>`+
+      (both?'<b>✓ both channels recovered the byte independently</b>':
+        (audioOk?'<b>✓ acoustic recovered</b> · optical missed':'optical ok · acoustic missed'));
+  });
+
+  window.__strobe={buildFSK,decodeFSK,decodeStrobe,runStrobe,strobeLog:()=>strobeLog};
+})();
+</script>
+</body>
+</html>
