@@ -4,6 +4,6 @@ slug  : strobe-modem
 seal  : 7042f630765387ab0e3416ba59a4a25f554bc6d390a675800c1c5734087e0681
 prev  : 47a1daff3d2928a41366fdf0bfbaf5cba9afb7ddaac66a654f5e5f0f280658fa
 link  : 81645f595b4d205ac924fa42220270e927158272b91dc60b09f00f3ae6a76f16
-head  : 3447d3a0533aaf1e29a8bdc67a9774884fb3ae9dbc8a17064b7a008ca3c4ec90
+head  : 13f9ace173ef2e60af38912ba329b4afcb5a38b84a0e4495e8d30327f8c99cc2
 
 — the tether: link = sha256(index|slug|seal|prev). the chain head commits to the whole corpus.
